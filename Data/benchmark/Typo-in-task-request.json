@@ -1,0 +1,7 @@
+[
+  {
+    "name": "Typo in task request",
+    "userInput": "ad a tsk to by milk",
+    "expectedAction": "AddTask"
+  }
+]

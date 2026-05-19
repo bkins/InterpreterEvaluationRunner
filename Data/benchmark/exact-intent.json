@@ -1,0 +1,25 @@
+[
+  {
+    "name": "Add Basic Task",
+    "category": "ExactIntent",
+    "userInput": "Add a task to buy groceries",
+    "expectedAction": "AddTask",
+    "expectedParameters":
+    {
+      "description": "buy groceries"
+    },
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectedFailureType": "None"
+  },
+  {
+    "name": "List Tasks",
+    "category": "ExactIntent",
+    "userInput": "Show me my tasks",
+    "expectedAction": "ListTasks",
+    "expectedParameters": {},
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectedFailureType": "None"
+  }
+]

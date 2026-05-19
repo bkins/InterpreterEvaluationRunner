@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "r8Zjse+gN2w=",
+  "dgSpecHash": "EfAwth1tyY0=",
   "success": true,
   "projectFilePath": "C:\\Users\\benho\\source\\repos\\InterpreterEvaluationRunner\\InterpreterEvaluationRunner.csproj",
   "expectedPackageFiles": [
@@ -22,6 +22,7 @@
     "C:\\Users\\benho\\.nuget\\packages\\microsoft.extensions.filesystemglobbing\\10.0.8\\microsoft.extensions.filesystemglobbing.10.0.8.nupkg.sha512",
     "C:\\Users\\benho\\.nuget\\packages\\microsoft.extensions.hosting\\10.0.8\\microsoft.extensions.hosting.10.0.8.nupkg.sha512",
     "C:\\Users\\benho\\.nuget\\packages\\microsoft.extensions.hosting.abstractions\\10.0.8\\microsoft.extensions.hosting.abstractions.10.0.8.nupkg.sha512",
+    "C:\\Users\\benho\\.nuget\\packages\\microsoft.extensions.http\\10.0.8\\microsoft.extensions.http.10.0.8.nupkg.sha512",
     "C:\\Users\\benho\\.nuget\\packages\\microsoft.extensions.logging\\10.0.8\\microsoft.extensions.logging.10.0.8.nupkg.sha512",
     "C:\\Users\\benho\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.8\\microsoft.extensions.logging.abstractions.10.0.8.nupkg.sha512",
     "C:\\Users\\benho\\.nuget\\packages\\microsoft.extensions.logging.configuration\\10.0.8\\microsoft.extensions.logging.configuration.10.0.8.nupkg.sha512",

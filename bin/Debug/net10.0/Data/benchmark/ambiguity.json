@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Vague Stuff",
+    "category": "AmbiguousIntent",
+    "userInput": "Show me my stuff",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": false,
+    "shouldFail": true,
+    "expectedFailureType": "AmbiguousIntent"
+  }
+]

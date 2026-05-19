@@ -1,0 +1,15 @@
+[
+  {
+    "name": "Conversational Task",
+    "category": "ConversationalNoise",
+    "userInput": "Hey can you remind me to buy groceries later?",
+    "expectedAction": "AddTask",
+    "expectedParameters":
+    {
+      "description": "buy groceries"
+    },
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectedFailureType": "None"
+  }
+]

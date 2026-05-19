@@ -1,0 +1,8 @@
+[
+  {
+  "name": "Ambiguous task listing",
+  "userInput": "show me the important stuff",
+  "expectedAction": "None",
+  "expectedFailureType": "AmbiguousRequest"
+  }
+]

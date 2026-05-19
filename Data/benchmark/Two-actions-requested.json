@@ -1,0 +1,7 @@
+[
+  {
+    "name": "Two actions requested",
+    "userInput": "add a task and show my journal",
+    "expectedFailureType": "AmbiguousRequest"
+  }
+]
