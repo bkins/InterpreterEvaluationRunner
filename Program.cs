@@ -10,8 +10,12 @@ using InterpreterEvaluationRunner.Interpreter.Pipeline.Repair.Rules;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 var builder = Host.CreateApplicationBuilder(args);
+
+builder.Logging.AddFilter("System.Net.Http.HttpClient"
+                        , LogLevel.Warning);
 
 builder.Services.AddHttpClient<IModelClient, OllamaClient>(client =>
 {

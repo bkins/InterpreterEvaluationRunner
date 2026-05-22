@@ -1,9 +1,11 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Models;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Normalization;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Repair.Engine;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Validation;
+using Spectre.Console;
 
 namespace InterpreterEvaluationRunner.Interpreter.Pipeline.Evaluation;
 
@@ -58,11 +60,18 @@ public class EvaluationRunner : IEvaluationRunner
                      };
 
         var allResults = new List<EvaluationResult>();
-
+        
+        Console.WriteLine("------------------------------------------------");
+        Console.WriteLine($"Models to be tested: \n - {string.Join("\n - ", models)}");;
+        Console.WriteLine("------------------------------------------------");
+        
         foreach (var model in models)
         {
+            
+            Console.WriteLine("");
             Console.WriteLine($"Starting benchmark for model: {model}");
-
+            Console.WriteLine($"");
+            
             var consecutiveFailures = 0;
             //var justUseThree = testCases.Take(3);
             //Console.WriteLine($"Running only the first 3 test cases for model {model} to check for basic functionality before proceeding with the full benchmark.");
@@ -70,7 +79,9 @@ public class EvaluationRunner : IEvaluationRunner
             foreach (var testCase in testCases)
             {
                 var result = await RunSingleTestAsync(model, testCase);
-
+                
+                allResults.Add(result);
+                
                 if (result.Score == 0)
                 {
                     consecutiveFailures++;
@@ -88,11 +99,52 @@ public class EvaluationRunner : IEvaluationRunner
             }
         }
 
+        PrintSummary(allResults);
         await _resultExporter.ExportAsync(allResults);
         
-        Console.WriteLine($"\nAll tests completed in {sw.Elapsed.TotalSeconds:F2} seconds");
+        var formattedTime = sw.Elapsed.ToString(@"hh\:mm\:ss");
+        
+        Console.WriteLine($"\nAll tests completed in {formattedTime} seconds");
+        
     }
 
+    private void PrintSummary(List<EvaluationResult> results)
+    {
+        Console.WriteLine();
+        Console.WriteLine("================================================");
+        Console.WriteLine("FINAL SUMMARY");
+        Console.WriteLine("================================================");
+        Console.WriteLine();
+
+        Console.WriteLine(
+            $"{"MODEL",-15} {"AVG",-8} {"JSON",-8} {"INTENT",-8} {"PARAMS",-8} {"FAILTYPE",-10} {"TIMEOUTS",-10}");
+
+        Console.WriteLine(new string('-', 75));
+
+        var grouped = results.GroupBy(r => r.ModelName);
+
+        foreach (var modelGroup in grouped)
+        {
+            var modelResults        = modelGroup.ToList();
+            var avgScore            = modelResults.Average(result => result.Score);
+            var jsonFailures        = modelResults.Count(result => result.FailureCategories.Contains(FailureCategory.JsonParseFailure));
+            var intentFailures      = modelResults.Count(result => result.FailureCategories.Contains(FailureCategory.WrongIntent));
+            var parameterFailures   = modelResults.Count(result => result.FailureCategories.Contains(FailureCategory.ParameterMismatch));
+            var failureTypeFailures = modelResults.Count(result => result.FailureCategories.Contains(FailureCategory.WrongFailureType));
+            var timeouts            = modelResults.Count(result => result.FailureCategories.Contains(FailureCategory.Timeout));
+
+            Console.WriteLine($"{modelGroup.Key,-15} "
+                            + $"{avgScore,-8:F1} "
+                            + $"{jsonFailures,-8} "
+                            + $"{intentFailures,-8} "
+                            + $"{parameterFailures,-8} "
+                            + $"{failureTypeFailures,-10} "
+                            + $"{timeouts,-10}");
+        }
+
+        Console.WriteLine();
+    }
+    
     private async Task<EvaluationResult> RunSingleTestAsync( string              model
                                                             , EvaluationTestCase testCase)
     {
@@ -101,60 +153,55 @@ public class EvaluationRunner : IEvaluationRunner
         var stopwatch = Stopwatch.StartNew();
         
         Console.WriteLine($"""
-                           RUNNING TEST
-                           Model: {model}
-                           Test : {testCase.Name}
-                           Input: {testCase.UserInput}
+                           Next Test:
+                           -------------------------------------------
+                           Model         : {model}
+                           Test          : {testCase.Name}
+                           Input         : {testCase.UserInput}
+                           PROMPT LENGTH : {prompt.Length}
                            """);
-        Console.WriteLine($"PROMPT LENGTH: {prompt.Length}");
+        Console.WriteLine($"");
         
         string rawResponse;
 
         try
         {
-            var beforeGenerate = stopwatch.ElapsedMilliseconds;
+            var beforeGenerate = stopwatch.ElapsedMilliseconds / 1000.0;
             
+            Console.WriteLine($"Sending prompt to model...");
             rawResponse = await _modelClient.GenerateAsync(model, prompt);
             
-            var afterGenerate = stopwatch.ElapsedMilliseconds;
+            var afterGenerate = stopwatch.ElapsedMilliseconds / 1000.0;
             
-            Console.WriteLine($"GENERATION TIME: {afterGenerate - beforeGenerate}ms");
+            Console.WriteLine($"GENERATION TIME: {afterGenerate - beforeGenerate} seconds");
         }
-        catch (TaskCanceledException)
+        catch (TaskCanceledException tce)
         {
             stopwatch.Stop();
 
-            return HandleException(model: model
-                                 , testCase: testCase);
+            return HandleException(model:     model
+                                 , testCase:  testCase
+                                 , exception: tce);
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException hre)
         {
             stopwatch.Stop();
 
-            return HandleException(model: model
-                                 , testCase: testCase);
+            return HandleException(model:     model
+                                 , testCase:  testCase
+                                 , exception: hre);
         }
-        catch (JsonException)
+        catch (JsonException je)
         {
             stopwatch.Stop();
 
-            return HandleException(model: model
-                                 , testCase: testCase);
+            return HandleException(model:     model
+                                 , testCase:  testCase
+                                 , exception: je);
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-
-            Console.WriteLine($"""
-
-                               ================================================
-                               ERROR
-                               MODEL: {model}
-                               TEST : {testCase.Name}
-                               ERROR: {ex.Message}
-                               ================================================
-
-                               """);
 
             return new EvaluationResult
                    {
@@ -162,6 +209,7 @@ public class EvaluationRunner : IEvaluationRunner
                          , TestName               = testCase.Name
                          , JsonParsedSuccessfully = false
                          , RawResponse            = $"[ERROR] {ex.Message}"
+                         , StackTrace             = ex.StackTrace
                          , Score                  = 0
                          , Failures =
                            [
@@ -176,6 +224,7 @@ public class EvaluationRunner : IEvaluationRunner
         
         if (response != null)
         {
+            Console.WriteLine("");
             Console.WriteLine("DESERIALIZED RESPONSE:");
             Console.WriteLine(JsonSerializer.Serialize(response
                                                      , new JsonSerializerOptions
@@ -193,6 +242,7 @@ public class EvaluationRunner : IEvaluationRunner
                 foreach (var error in validationResult.Errors)
                 {
                     Console.WriteLine($"""
+                                       
                                        VALIDATION ERROR
                                        Property: {error.PropertyName}
                                        Message : {error.ErrorMessage}
@@ -202,7 +252,8 @@ public class EvaluationRunner : IEvaluationRunner
             }
         }
 
-        var result = _resultScorer.Score(testCase
+        var result = _resultScorer.Score(model
+                                       , testCase
                                        , response
                                        , parsed
                                        , pipelineResult.RepairResult.RepairedText
@@ -215,6 +266,7 @@ public class EvaluationRunner : IEvaluationRunner
         stopwatch.Stop();
 
         Console.WriteLine($"""
+                           
                            ================================================
                            MODEL: {model}
                            TEST: {testCase.Name}
@@ -237,23 +289,30 @@ public class EvaluationRunner : IEvaluationRunner
                            FAILURES:
                            {formatedFailures}
                            
+                           {testCase.Name} -- DONE
+                           
                            """);
         return result;
     }
 
-    private EvaluationResult HandleException( string             model
-                                            , EvaluationTestCase testCase )
+    private EvaluationResult HandleException( string                model
+                                            , EvaluationTestCase    testCase
+                                            , Exception             exception )
     {
+        var tab = "\t";
+        var innerException = exception.InnerException is not null
+                                     ? $"\n{tab}Inner Exception: {exception.InnerException.Message}"
+                                     : string.Empty;
+        Console.WriteLine(
+$"""
 
-        Console.WriteLine($"""
+{tab}================================================
+{tab}ERROR: {exception.Message}{innerException}
+{tab}MODEL: {model}
+{tab}TEST : {testCase.Name}
+{tab}================================================
 
-                           ================================================
-                           TIMEOUT
-                           MODEL: {model}
-                           TEST : {testCase.Name}
-                           ================================================
-
-                           """);
+""");
 
         return new EvaluationResult
                {
@@ -264,7 +323,11 @@ public class EvaluationRunner : IEvaluationRunner
                      , Score                  = 0
                      , Failures =
                        [
-                               "Model timeout"
+                               "Model may have timed out"
+                       ]
+                     , FailureCategories =
+                       [
+                               FailureCategory.Timeout
                        ]
                      , PromptVersion = _promptBuilder.Version
                };
@@ -286,9 +349,10 @@ public class EvaluationRunner : IEvaluationRunner
 
         var allTestCases = new List<EvaluationTestCase>();
 
+        Console.WriteLine($"Loading benchmark files:");
         foreach (var file in files)
         {
-            Console.WriteLine($"Loading benchmark file: {file}");
+            Console.WriteLine($" - {file}");
 
             var json = await File.ReadAllTextAsync(file);
 
@@ -320,7 +384,8 @@ public class EvaluationRunner : IEvaluationRunner
             allTestCases.AddRange(testCases);
 
         }
-
+        
+        Console.WriteLine($"Total test cases loaded: {allTestCases.Count} in {files.Length} files");
         return allTestCases;
     }
 }
