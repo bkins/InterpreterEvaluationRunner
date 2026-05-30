@@ -1,6 +1,7 @@
+
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
+using ConsoleUtilities.Spinners;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Models;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Normalization;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Repair.Engine;
@@ -11,13 +12,65 @@ namespace InterpreterEvaluationRunner.Interpreter.Pipeline.Evaluation;
 
 public class EvaluationRunner : IEvaluationRunner
 {
+    /*
+     * Technical Debt / Future Enhancements
+
+    Scoring:
+        - weighted semantic scoring
+        - partial parameter credit
+        - repair penalties
+        - structural vs semantic subscores
+        - confidence calibration scoring
+    
+    Benchmarking:
+        - larger benchmark datasets
+        - adversarial tests
+        - ambiguity tests
+        - hallucination tests
+        - conversational memory tests
+    
+    Metrics:
+        - confusion matrices
+        - per-action accuracy
+        - repair-rate metrics
+        - latency distributions
+        - validation error analytics
+        - Evaluation Intelligence
+        - candidate action ranking quality
+        - clarification quality scoring
+        - probabilistic scoring
+        - threshold tuning
+    
+    Visualization:
+        - charts
+        - trend tracking
+        - model comparisons over time
+        - regression detection
+     */
+    
+    /*
+     * Next steps:
+     * 1. Multi-turn clarification flow
+     * 2. Context/memory
+     * 3. Action generalization
+     *
+     * More specifically:
+     *  | Priority | Area                        |
+        | -------- | --------------------------- |
+        | 1        | Multi-turn clarification    |
+        | 2        | Conversation state          |
+        | 3        | Context persistence         |
+        | 4        | Action abstraction          |
+        | 5        | Benchmark expansion         |
+        | 6        | Identity conditioning       |
+        | 7        | Training dataset generation |
+        | 8        | Fine-tuning experiments     |
+
+     */
     private readonly IModelClient          _modelClient;
     private readonly PromptBuilder         _promptBuilder;
     private readonly ResultScorer          _resultScorer;
-    private readonly IContractValidator    _validator;
     private readonly ResultExporter        _resultExporter;
-    private readonly NormalizationLayer    _normalizationLayer;
-    private readonly IResponseRepairEngine _responseRepairEngine;
     private readonly IInterpreterPipeline  _pipeline;
 
     public EvaluationRunner( IModelClient          modelClient
@@ -31,288 +84,320 @@ public class EvaluationRunner : IEvaluationRunner
     {
         _modelClient          = modelClient;
         _promptBuilder        = promptBuilder;
-        _normalizationLayer   = normalizationLayer;
         _resultScorer         = resultScorer;
-        _validator            = validator;
         _resultExporter       = resultExporter;
-        _responseRepairEngine = responseRepairEngine;
         _pipeline             = pipeline;
     }
 
     public async Task RunAsync()
     {
-        var sw        = new Stopwatch();
-        sw.Start();
-        
-        var testCases = await LoadTestCasesAsync();
-        // var models = new[]
-        //              {
-        //                      "phi3:mini"
-        //              };
+        var overallStopwatch = Stopwatch.StartNew();
+        var testCases        = await LoadTestCasesAsync();
+
         var models = new[]
                      {
-                           //   "phi3:mini"
-                           // , 
                              "qwen2.5:7b"
                            , "mistral"
-                             //, "deepseek-r1:8b"
                            , "llama3.1:8b"
                      };
 
         var allResults = new List<EvaluationResult>();
-        
-        Console.WriteLine("------------------------------------------------");
-        Console.WriteLine($"Models to be tested: \n - {string.Join("\n - ", models)}");;
-        Console.WriteLine("------------------------------------------------");
-        
+
+        RenderHeader("INTERPRETER EVALUATION RUNNER");
+
+        var modelsPanel = new Panel(string.Join(Environment.NewLine
+                                              , models.Select(model => $"[cyan]-[/] {model}"))).Header("[bold yellow]MODELS[/]")
+                                                                                               .Border(BoxBorder.Rounded)
+                                                                                               .BorderColor(Color.Grey);
+
+        AnsiConsole.Write(modelsPanel);
+
         foreach (var model in models)
         {
-            
-            Console.WriteLine("");
-            Console.WriteLine($"Starting benchmark for model: {model}");
-            Console.WriteLine($"");
-            
+            RenderSectionHeader($"STARTING MODEL: {model}");
+
             var consecutiveFailures = 0;
-            //var justUseThree = testCases.Take(3);
-            //Console.WriteLine($"Running only the first 3 test cases for model {model} to check for basic functionality before proceeding with the full benchmark.");
-            
+
             foreach (var testCase in testCases)
             {
-                var result = await RunSingleTestAsync(model, testCase);
-                
-                allResults.Add(result);
-                
-                if (result.Score == 0)
-                {
-                    consecutiveFailures++;
-                }
-                else
-                {
-                    consecutiveFailures = 0;
-                }
+                var result = await RunSingleTestAsync(model
+                                                    , testCase);
 
-                if (consecutiveFailures >= 5)
-                {
-                    Console.WriteLine($"Skipping model {model} due to repeated failures.");
-                    break;
-                }
+                allResults.Add(result);
+
+                consecutiveFailures = result.Score == 0
+                                              ? consecutiveFailures + 1
+                                              : 0;
+
+                if (consecutiveFailures < 5) continue; 
+                
+                var skipPanelTitle = $"[bold red]Skipping model due to repeated failures[/]";
+                AnsiConsole.Write(new Panel(skipPanelTitle).Header($"[red]{model}[/]")
+                                                           .Border(BoxBorder.Heavy));
+
+                break;
             }
         }
 
         PrintSummary(allResults);
+
         await _resultExporter.ExportAsync(allResults);
-        
-        var formattedTime = sw.Elapsed.ToString(@"hh\:mm\:ss");
-        
-        Console.WriteLine($"\nAll tests completed in {formattedTime} seconds");
-        
+
+        overallStopwatch.Stop();
+
+        var finalPanelTitle = $"[bold green]All tests completed in {overallStopwatch.Elapsed:hh\\:mm\\:ss}[/]";
+        var finalPanel      = new Panel(finalPanelTitle).Border(BoxBorder.Double)
+                                                        .BorderColor(Color.Green);;
+
+        AnsiConsole.Write(finalPanel);
     }
 
-    private void PrintSummary(List<EvaluationResult> results)
+    private async Task<EvaluationResult> RunSingleTestAsync( string             model
+                                                           , EvaluationTestCase testCase )
     {
-        Console.WriteLine();
-        Console.WriteLine("================================================");
-        Console.WriteLine("FINAL SUMMARY");
-        Console.WriteLine("================================================");
-        Console.WriteLine();
-
-        Console.WriteLine(
-            $"{"MODEL",-15} {"AVG",-8} {"JSON",-8} {"INTENT",-8} {"PARAMS",-8} {"FAILTYPE",-10} {"TIMEOUTS",-10}");
-
-        Console.WriteLine(new string('-', 75));
-
-        var grouped = results.GroupBy(r => r.ModelName);
-
-        foreach (var modelGroup in grouped)
-        {
-            var modelResults        = modelGroup.ToList();
-            var avgScore            = modelResults.Average(result => result.Score);
-            var jsonFailures        = modelResults.Count(result => result.FailureCategories.Contains(FailureCategory.JsonParseFailure));
-            var intentFailures      = modelResults.Count(result => result.FailureCategories.Contains(FailureCategory.WrongIntent));
-            var parameterFailures   = modelResults.Count(result => result.FailureCategories.Contains(FailureCategory.ParameterMismatch));
-            var failureTypeFailures = modelResults.Count(result => result.FailureCategories.Contains(FailureCategory.WrongFailureType));
-            var timeouts            = modelResults.Count(result => result.FailureCategories.Contains(FailureCategory.Timeout));
-
-            Console.WriteLine($"{modelGroup.Key,-15} "
-                            + $"{avgScore,-8:F1} "
-                            + $"{jsonFailures,-8} "
-                            + $"{intentFailures,-8} "
-                            + $"{parameterFailures,-8} "
-                            + $"{failureTypeFailures,-10} "
-                            + $"{timeouts,-10}");
-        }
-
-        Console.WriteLine();
-    }
-    
-    private async Task<EvaluationResult> RunSingleTestAsync( string              model
-                                                            , EvaluationTestCase testCase)
-    {
-        var prompt = _promptBuilder.BuildPrompt(testCase.UserInput);
-
+        var prompt    = _promptBuilder.BuildPrompt(testCase.UserInput);
         var stopwatch = Stopwatch.StartNew();
-        
-        Console.WriteLine($"""
-                           Next Test:
-                           -------------------------------------------
-                           Model         : {model}
-                           Test          : {testCase.Name}
-                           Input         : {testCase.UserInput}
-                           PROMPT LENGTH : {prompt.Length}
-                           """);
-        Console.WriteLine($"");
-        
+
+        RenderTestHeader(model
+                       , testCase
+                       , prompt.Length);
+
         string rawResponse;
 
         try
         {
-            var beforeGenerate = stopwatch.ElapsedMilliseconds / 1000.0;
-            
-            Console.WriteLine($"Sending prompt to model...");
-            rawResponse = await _modelClient.GenerateAsync(model, prompt);
-            
-            var afterGenerate = stopwatch.ElapsedMilliseconds / 1000.0;
-            
-            Console.WriteLine($"GENERATION TIME: {afterGenerate - beforeGenerate} seconds");
-        }
-        catch (TaskCanceledException tce)
-        {
-            stopwatch.Stop();
-
-            return HandleException(model:     model
-                                 , testCase:  testCase
-                                 , exception: tce);
-        }
-        catch (HttpRequestException hre)
-        {
-            stopwatch.Stop();
-
-            return HandleException(model:     model
-                                 , testCase:  testCase
-                                 , exception: hre);
-        }
-        catch (JsonException je)
-        {
-            stopwatch.Stop();
-
-            return HandleException(model:     model
-                                 , testCase:  testCase
-                                 , exception: je);
+            rawResponse = await GenerateResponseAsync(model
+                                                    , prompt
+                                                    , testCase);
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
 
-            return new EvaluationResult
-                   {
-                           ModelName              = model
-                         , TestName               = testCase.Name
-                         , JsonParsedSuccessfully = false
-                         , RawResponse            = $"[ERROR] {ex.Message}"
-                         , StackTrace             = ex.StackTrace
-                         , Score                  = 0
-                         , Failures =
-                           [
-                                   $"Exception: {ex.GetType().Name}"
-                           ]
-                         , PromptVersion = _promptBuilder.Version
-                   };
-        }
-        var pipelineResult = await _pipeline.ProcessAsync(rawResponse);
-        var response       = pipelineResult.Response;
-        var parsed         = pipelineResult.Success;
-        
-        if (response != null)
-        {
-            Console.WriteLine("");
-            Console.WriteLine("DESERIALIZED RESPONSE:");
-            Console.WriteLine(JsonSerializer.Serialize(response
-                                                     , new JsonSerializerOptions
-                                                       {
-                                                               WriteIndented = true
-                                                       }));
+            return HandleException(model
+                                 , testCase
+                                 , ex);
         }
 
-        if (response != null)
-        {
-            var validationResult = pipelineResult.ValidationResult;
-            
-            if ( ! validationResult.IsValid)
-            {
-                foreach (var error in validationResult.Errors)
-                {
-                    Console.WriteLine($"""
-                                       
-                                       VALIDATION ERROR
-                                       Property: {error.PropertyName}
-                                       Message : {error.ErrorMessage}
-                                       Attempted Value: {error.AttemptedValue}
-                                       """);
-                }
-            }
-        }
+        var pipelineResult         = await _pipeline.ProcessAsync(rawResponse);
+        var jsonParsedSuccessfully = pipelineResult.JsonParsedSuccessfully;
+        var validationSucceeded    = pipelineResult.ValidationSucceeded;
+        var response               = pipelineResult.Response;
+        var parsed                 = pipelineResult.JsonParsedSuccessfully;
+
+        RenderPipelineDetails(pipelineResult, response);
 
         var result = _resultScorer.Score(model
                                        , testCase
-                                       , response
-                                       , parsed
-                                       , pipelineResult.RepairResult.RepairedText
+                                       , pipelineResult
                                        , stopwatch.ElapsedMilliseconds);
-        
-        result.PromptVersion             = _promptBuilder.Version;
-        //Moved to Pipeline
-        // result.JsonExtractionWasRequired = extractionResult.WasModified;
-        
+
+        result.PromptVersion = _promptBuilder.Version;
+
         stopwatch.Stop();
 
-        Console.WriteLine($"""
-                           
-                           ================================================
-                           MODEL: {model}
-                           TEST: {testCase.Name}
-                           LATENCY: {stopwatch.ElapsedMilliseconds}ms
-                           PARSED: {parsed}
-                           RAW RESPONSE:
-                           {pipelineResult.RepairResult.RepairedText}
-                           ================================================
-                           """);
-        
-        var formatedFailures = result.Failures.Count != 0
-                              ? string.Join(Environment.NewLine
-                                          , result.Failures.Select(failures => $"- {failures}"))
-                              : "None";
-        
-        Console.WriteLine($"""
-                           SCORE: {result.Score}
-                           ACTION CORRECT: {result.ActionWasCorrect}
-                           PARAMETERS CORRECT: {result.ParametersWereCorrect}
-                           FAILURES:
-                           {formatedFailures}
-                           
-                           {testCase.Name} -- DONE
-                           
-                           """);
+        RenderResultSummary(model
+                          , testCase
+                          , stopwatch.ElapsedMilliseconds
+                          , parsed
+                          , result
+                          , pipelineResult.RepairResult.RepairedText);
+
         return result;
     }
 
-    private EvaluationResult HandleException( string                model
-                                            , EvaluationTestCase    testCase
-                                            , Exception             exception )
+    private async Task<string> GenerateResponseAsync( string             model
+                                                    , string             prompt
+                                                    , EvaluationTestCase testCase )
     {
-        var tab = "\t";
-        var innerException = exception.InnerException is not null
-                                     ? $"\n{tab}Inner Exception: {exception.InnerException.Message}"
-                                     : string.Empty;
-        Console.WriteLine(
-$"""
+        return await SpinnerRunner.RunAsync($"Model: {model}"
+                                          , async report =>
+                                            {
+                                                report($"Test: {testCase.Name}");
 
-{tab}================================================
-{tab}ERROR: {exception.Message}{innerException}
-{tab}MODEL: {model}
-{tab}TEST : {testCase.Name}
-{tab}================================================
+                                                var generationWatch = Stopwatch.StartNew();
+                                                var response        = await _modelClient.GenerateAsync(model, prompt);
 
-""");
+                                                generationWatch.Stop();
+
+                                                report($"Completed in {generationWatch.Elapsed:mm\\:ss}");
+
+                                                return response;
+                                            }
+                                          , Color.Cyan
+                                          , $"Generating with {model}");
+    }
+
+    private void RenderTestHeader( string             model
+                                 , EvaluationTestCase testCase
+                                 , int                promptLength )
+    {
+        var grid = new Grid();
+
+        grid.AddColumn();
+        grid.AddColumn();
+
+        grid.AddRow("[grey]Model[/]", $"[cyan]{Escape(model)}[/]");
+        grid.AddRow("[grey]Test[/]", $"[yellow]{Escape(testCase.Name)}[/]");
+        grid.AddRow("[grey]Prompt Length[/]", $"[green]{promptLength}[/]");
+        grid.AddRow("[grey]Input[/]", Escape(testCase.UserInput));
+
+        var panel = new Panel(grid).Header("[bold white]TEST CASE[/]")
+                                   .Border(BoxBorder.Rounded)
+                                   .BorderColor(Color.Blue);
+
+        AnsiConsole.Write(panel);
+    }
+
+    private static void RenderPipelineDetails( PipelineResult            pipelineResult
+                                             , ModelInterpreterResponse? response )
+    {
+        if (response != null)
+        {
+            var json = JsonSerializer.Serialize(response
+                                              , new JsonSerializerOptions
+                                                {
+                                                        WriteIndented = true
+                                                });
+
+            var responsePanel = new Panel(new Markup(Escape(json))).Header("[green]DESERIALIZED RESPONSE[/]")
+                                                                   .Border(BoxBorder.Rounded)
+                                                                   .BorderColor(Color.Green);
+
+            AnsiConsole.Write(responsePanel);
+        }
+
+        if (response == null) return;
+
+        var validationResult = pipelineResult.ValidationResult;
+
+        if (validationResult.IsValid) return;
+
+        foreach (var validationPanel
+                 in validationResult.Errors
+                                    .Select(GetFormattedValidationError)
+                                    .Select(errorText => new Panel(new Markup(errorText)).Header("[bold red]VALIDATION ERROR[/]")
+                                                                                         .Border(BoxBorder.Heavy)
+                                                                                         .BorderColor(Color.Red)))
+        {
+            AnsiConsole.Write(validationPanel);
+        }
+    }
+
+    private static string GetFormattedValidationError( ValidationError error ) => $"""
+                                                                                   [yellow]Property:[/] {Escape(error.PropertyName)}
+
+                                                                                   [yellow]Message:[/] {Escape(error.ErrorMessage)}
+
+                                                                                   [yellow]Attempted:[/] {Escape(error.AttemptedValue?.ToString() ?? "null")}
+                                                                                   """;
+
+    private void RenderResultSummary( string             model
+                                    , EvaluationTestCase testCase
+                                    , long               elapsedMilliseconds
+                                    , bool               parsed
+                                    , EvaluationResult   result
+                                    , string             repairedResponse )
+    {
+        var failures = result.Failures.Count != 0
+                               ? string.Join(Environment.NewLine
+                                           , result.Failures.Select(f => $"[red]-[/] {Escape(f)}"))
+                               : "[green]None[/]";
+
+        var summary = $"""
+                       [grey]Model:[/] {Escape(model)}
+                       [grey]Test:[/] {Escape(testCase.Name)}
+                       [grey]Latency:[/] {elapsedMilliseconds}ms
+                       [grey]Parsed:[/] {(parsed ? "[green]Yes[/]" : "[red]No[/]")}
+
+                       [grey]Score:[/] {(result.Score > 0 ? $"[green]{result.Score}[/]" : $"[red]{result.Score}[/]")}
+                       [grey]Action Correct:[/] {(result.ActionWasCorrect ? "[green]Yes[/]" : "[red]No[/]")}
+                       [grey]Parameters Correct:[/] {(result.ParametersWereCorrect ? "[green]Yes[/]" : "[red]No[/]")}
+
+                       [grey]Failures:[/]
+                       {failures}
+                       """;
+
+        var panel =
+                new Panel(new Markup(summary)).Header("[bold white]RESULT SUMMARY[/]")
+                                              .Border(BoxBorder.Rounded)
+                                              .BorderColor(result.Score > 0
+                                                                   ? Color.Green
+                                                                   : Color.Red);
+
+        AnsiConsole.Write(panel);
+
+        var rawResponsePanel = new Panel(new Markup(Escape(repairedResponse))).Header("[grey]RAW RESPONSE[/]")
+                                                                              .Border(BoxBorder.Rounded)
+                                                                              .BorderColor(Color.Grey);
+
+        AnsiConsole.Write(rawResponsePanel);
+    }
+
+    private void PrintSummary( List<EvaluationResult> results )
+    {
+        RenderSectionHeader("FINAL SUMMARY");
+
+        var table = new Table().Border(TableBorder.Rounded)
+                               .BorderColor(Color.Grey);
+
+        table.AddColumn("[bold cyan]MODEL[/]");
+        table.AddColumn("[bold green]AVG[/]");
+        table.AddColumn("[bold yellow]JSON[/]");
+        table.AddColumn("[bold yellow]INTENT[/]");
+        table.AddColumn("[bold yellow]PARAMS[/]");
+        table.AddColumn("[bold yellow]FAILTYPE[/]");
+        table.AddColumn("[bold red]TIMEOUTS[/]");
+
+        var grouped = results.GroupBy(result => result.ModelName);
+
+        foreach (var modelGroup in grouped)
+        {
+            var modelResults = modelGroup.ToList();
+            var avgScore = modelResults.Average(result => result.Score);
+
+            var jsonFailures = modelResults.Count(result => result.FailureCategories
+                                                                  .Contains(FailureCategory.JsonParseFailure));
+
+            var intentFailures = modelResults.Count(result => result.FailureCategories
+                                                                    .Contains(FailureCategory.WrongIntent));
+
+            var parameterFailures = modelResults.Count(result => result.FailureCategories
+                                                                       .Contains(FailureCategory.ParameterMismatch));
+
+            var failureTypeFailures = modelResults.Count(result => result.FailureCategories
+                                                                         .Contains(FailureCategory.WrongFailureType));
+
+            var timeouts = modelResults.Count(result => result.FailureCategories
+                                                              .Contains(FailureCategory.Timeout));
+
+            table.AddRow(Escape(modelGroup.Key)
+                       , avgScore.ToString("F1")
+                       , jsonFailures.ToString()
+                       , intentFailures.ToString()
+                       , parameterFailures.ToString()
+                       , failureTypeFailures.ToString()
+                       , timeouts.ToString());
+        }
+
+        AnsiConsole.Write(table);
+    }
+
+    private EvaluationResult HandleException( string             model
+                                            , EvaluationTestCase testCase
+                                            , Exception          exception )
+    {
+        var exceptionPanel =
+                new Panel($"""
+                           [red]{Escape(exception.Message)}[/]
+
+                           [grey]Model:[/] {Escape(model)}
+                           [grey]Test:[/] {Escape(testCase.Name)}
+                           """).Header("[bold red]ERROR[/]")
+                               .Border(BoxBorder.Heavy)
+                               .BorderColor(Color.Red);
+
+        AnsiConsole.Write(exceptionPanel);
 
         return new EvaluationResult
                {
@@ -338,7 +423,7 @@ $"""
         var benchmarkDirectory = Path.Combine("Data"
                                             , "benchmark");
 
-        if ( ! Directory.Exists(benchmarkDirectory))
+        if (!Directory.Exists(benchmarkDirectory))
         {
             throw new DirectoryNotFoundException($"Benchmark directory not found: {benchmarkDirectory}");
         }
@@ -349,43 +434,54 @@ $"""
 
         var allTestCases = new List<EvaluationTestCase>();
 
-        Console.WriteLine($"Loading benchmark files:");
+        RenderSectionHeader("LOADING BENCHMARK FILES");
+
         foreach (var file in files)
         {
-            Console.WriteLine($" - {file}");
+            AnsiConsole.MarkupLine($"[grey]-[/] {Escape(file)}");
 
             var json = await File.ReadAllTextAsync(file);
 
-            //var testCases = JsonSerializer.Deserialize<List<EvaluationTestCase>>(json);
             var testCases = JsonSerializer.Deserialize<List<EvaluationTestCase>>(json
                                                                                , new JsonSerializerOptions
                                                                                  {
                                                                                          PropertyNameCaseInsensitive = true
                                                                                  });
+
             if (testCases == null)
             {
-                Console.WriteLine($"WARNING: `testCases` is null in file {file}");
-                continue;
-            }
-            
-            foreach (var testCase in testCases)
-            {
-                if (string.IsNullOrWhiteSpace(testCase.Name))
-                {
-                    Console.WriteLine($"WARNING: Missing test name in file {file}");
-                }
+                AnsiConsole.MarkupLine($"[red]WARNING:[/] testCases is null in {Escape(file)}");
 
-                if (string.IsNullOrWhiteSpace(testCase.UserInput))
-                {
-                    Console.WriteLine($"WARNING: Missing user input in file {file}");
-                }
+                continue;
             }
 
             allTestCases.AddRange(testCases);
-
         }
-        
-        Console.WriteLine($"Total test cases loaded: {allTestCases.Count} in {files.Length} files");
+
+        var panelTitle = $"[green]{allTestCases.Count}[/] test cases loaded from [cyan]{files.Length}[/] files";
+        var summaryPanel = new Panel(panelTitle).Border(BoxBorder.Rounded)
+                                                .BorderColor(Color.Green);
+
+        AnsiConsole.Write(summaryPanel);
+
         return allTestCases;
+    }
+
+    private static void RenderHeader( string title )
+    {
+        AnsiConsole.Write(new Rule($"[bold cyan]{title}[/]").RuleStyle("grey")
+                                                            .Centered());
+    }
+
+    private static void RenderSectionHeader( string title )
+    {
+        AnsiConsole.WriteLine();
+
+        AnsiConsole.Write(new Rule($"[bold yellow]{title}[/]").RuleStyle("grey"));
+    }
+
+    private static string Escape( string? text )
+    {
+        return Markup.Escape(text ?? string.Empty);
     }
 }

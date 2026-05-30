@@ -8,6 +8,7 @@ public class EvaluationTestCase
     public Dictionary<string, object> ExpectedParameters         { get; set; } = [];
     public bool                       ShouldRequireClarification { get; set; }
     public bool                       ShouldFail                 { get; set; }
+    public bool                       ExpectsFailure             { get; set; }
     public string                     ExpectedFailureType        { get; set; } = "None";
     public string                     Category                   { get; set; } = "";
 }

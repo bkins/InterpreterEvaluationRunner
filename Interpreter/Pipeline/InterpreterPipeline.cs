@@ -27,9 +27,9 @@ public class InterpreterPipeline : IInterpreterPipeline
 
         ValidationResult validationResult;
 
-        if (normalizationResult.Response != null)
+        if (normalizationResult != null)
         {
-            validationResult = await _validator.ValidateAsync(normalizationResult.Response);
+            validationResult = await _validator.ValidateAsync(normalizationResult);
         }
         else
         {
@@ -44,9 +44,9 @@ public class InterpreterPipeline : IInterpreterPipeline
 
         return new PipelineResult
                {
-                       RepairResult        = repairResult
-                     , NormalizationResult = normalizationResult
-                     , ValidationResult    = validationResult
+                       RepairResult             = repairResult
+                     , ModelInterpreterResponse = normalizationResult
+                     , ValidationResult         = validationResult
                };
     }
 }

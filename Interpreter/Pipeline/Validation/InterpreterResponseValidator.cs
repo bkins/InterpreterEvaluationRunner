@@ -6,7 +6,7 @@ namespace InterpreterEvaluationRunner.Interpreter.Pipeline.Validation;
 
 public class InterpreterResponseValidator : IContractValidator
 {
-    public Task<ValidationResult> ValidateAsync( NormalizedActionResponse response )
+    public Task<ValidationResult> ValidateAsync( ModelInterpreterResponse response )
     {
         var result = new ValidationResult();
 
@@ -18,7 +18,7 @@ public class InterpreterResponseValidator : IContractValidator
         return Task.FromResult(result);
     }
 
-    private static void ValidateActionName( NormalizedActionResponse response
+    private static void ValidateActionName( ModelInterpreterResponse response
                                           , ValidationResult         result )
     {
         if (string.IsNullOrWhiteSpace(response.ActionName))
@@ -32,7 +32,7 @@ public class InterpreterResponseValidator : IContractValidator
         }
     }
 
-    private static void ValidateConfidence( NormalizedActionResponse response
+    private static void ValidateConfidence( ModelInterpreterResponse response
                                           , ValidationResult         result )
     {
         if (response.Confidence is < 0 or > 1)
@@ -46,7 +46,7 @@ public class InterpreterResponseValidator : IContractValidator
         }
     }
 
-    private static void ValidateFailureType( NormalizedActionResponse response
+    private static void ValidateFailureType( ModelInterpreterResponse response
                                            , ValidationResult         result )
     {
         var validFailureTypes = new[]
@@ -69,7 +69,7 @@ public class InterpreterResponseValidator : IContractValidator
         }
     }
 
-    private static void ValidateCandidateActions( NormalizedActionResponse response
+    private static void ValidateCandidateActions( ModelInterpreterResponse response
                                                 , ValidationResult         result )
     {
         foreach (var candidate in response.CandidateActions)

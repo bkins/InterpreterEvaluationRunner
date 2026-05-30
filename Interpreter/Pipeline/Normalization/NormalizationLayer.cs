@@ -5,18 +5,21 @@ namespace InterpreterEvaluationRunner.Interpreter.Pipeline.Normalization;
 
 public class NormalizationLayer : INormalizationLayer
 {
-    public NormalizationResult Normalize(string raw)
+    public ModelInterpreterResponse Normalize(string raw)
     {
         if ( ! TryParse(raw, out var response))
         {
-            return new NormalizationResult
+            return new ModelInterpreterResponse
                    {
-                           Success = false
-                         , Error   = "Failed to parse model response"
+                           FailureType        = FailureTypes.ParsingError
+                         , FailureDescription = "Failed to parse model response"
+                           //   
+                           //   Success = false
+                           // , Error   = "Failed to parse model response"
                    };
         }
 
-        var normalized = new NormalizedActionResponse
+        var normalized = new ModelInterpreterResponse
                          {
                                  ActionName         = NormalizeActionName(response.ActionName)
                                , Confidence         = Math.Clamp(response.Confidence, 0, 1)
@@ -28,11 +31,7 @@ public class NormalizationLayer : INormalizationLayer
                                                                                      , kvp => (object)kvp.Value)
                          };
 
-        return new NormalizationResult
-               {
-                       Success = true
-                     , Response = normalized
-               };
+        return normalized;
     }
 
     private static string NormalizeFailureType( string? value)

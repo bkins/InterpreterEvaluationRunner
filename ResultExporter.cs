@@ -1,5 +1,6 @@
 using System.Text.Json;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Evaluation;
+using Spectre.Console;
 
 namespace InterpreterEvaluationRunner;
 
@@ -19,6 +20,6 @@ public class ResultExporter
 
         await File.WriteAllTextAsync(fileName, json);
 
-        Console.WriteLine($"\nResults exported to {fileName}");
+        AnsiConsole.MarkupLine($"\nResults exported to {fileName}");
     }
 }

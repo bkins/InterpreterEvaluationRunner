@@ -1,6 +1,8 @@
+using InterpreterEvaluationRunner.Interpreter.Pipeline.Models;
+
 namespace InterpreterEvaluationRunner.Interpreter.Pipeline.Normalization;
 
 public interface INormalizationLayer
 {
-    NormalizationResult Normalize(string repairedJson);
+    ModelInterpreterResponse? Normalize(string repairedJson);
 }
