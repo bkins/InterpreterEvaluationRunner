@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Missing Journal Content",
+    "category": "MissingParameters",
+    "userInput": "Create a journal entry",
+    "expectedAction": "AddJournalEntry",
+    "expectedParameters": {},
+    "shouldRequireClarification": true,
+    "shouldFail": false,
+    "expectedFailureType": "MissingParameters"
+  }
+]

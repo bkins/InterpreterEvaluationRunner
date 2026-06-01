@@ -1,0 +1,63 @@
+## .NET / Rider / Visual Studio
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+
+# Logs
+[Ll]og/
+[Ll]ogs/
+*.binlog
+[Bb]uild[Ll]og.*
+
+# IDEs
+.idea/
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Temporary files
+~$*
+*~
+
+# Test results / coverage
+[Tt]est[Rr]esult*/
+CodeCoverage/
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# NuGet
+*.nupkg
+*.snupkg
+
+# .NET / artifacts
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET scaffolding
+ScaffoldingReadMe.txt
+
+# Local data
+/Data/telemetry.db
+platform.db
+
+# Publish output
+publish/
+
+# Local development settings
+appsettings.Development.json
+bin/

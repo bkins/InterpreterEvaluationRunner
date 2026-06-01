@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Book Flight",
+    "category": "Unsupported",
+    "userInput": "Book me a flight to Paris",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": false,
+    "shouldFail": true,
+    "expectedFailureType": "UnsupportedRequest"
+  }
+]

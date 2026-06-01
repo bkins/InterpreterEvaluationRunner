@@ -1,0 +1,9 @@
+[
+  {
+  "name": "Missing task title",
+  "userInput": "add a task",
+  "expectedAction": "AddTask",
+  "expectedMissingParameters": [
+    "taskTitle"
+  ]
+}]

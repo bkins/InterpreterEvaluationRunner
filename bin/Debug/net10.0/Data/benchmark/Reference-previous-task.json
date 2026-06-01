@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Reference previous task",
+    "conversationHistory": [
+      "Add a task to buy groceries"
+    ],
+    "userInput": "mark that complete",
+    "expectedAction": "CompleteTask"
+  }
+]
