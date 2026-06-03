@@ -1,0 +1,98 @@
+[
+  {
+    "name": "SCH-01 - ListTasks returns valid JSON with no params",
+    "category": "SchemaCompliance",
+    "userInput": "show me my tasks",
+    "expectedAction": "ListTasks",
+    "expectedParameters": {},
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "SCH-02 - ChitChat returns valid JSON",
+    "category": "SchemaCompliance",
+    "userInput": "good morning",
+    "expectedAction": "ChitChat",
+    "expectedParameters": {},
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "SCH-03 - UnsupportedRequest returns correct failureType",
+    "category": "SchemaCompliance",
+    "userInput": "book me a flight to London",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": false,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "UnsupportedRequest",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "SCH-04 - AmbiguousIntent returns correct failureType",
+    "category": "SchemaCompliance",
+    "userInput": "show me everything",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": false,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "AmbiguousIntent",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "SCH-05 - AddTask with full parameters",
+    "category": "SchemaCompliance",
+    "userInput": "add task review pull request",
+    "expectedAction": "AddTask",
+    "expectedParameters": { "shortDescription": "review pull request" },
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "SCH-06 - SearchJournalEntries with optional query",
+    "category": "SchemaCompliance",
+    "userInput": "search my journal for work entries",
+    "expectedAction": "SearchJournalEntries",
+    "expectedParameters": {},
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": true
+  },
+  {
+    "name": "SCH-07 - DescribeAction with target action",
+    "category": "SchemaCompliance",
+    "userInput": "describe the CompleteTask action",
+    "expectedAction": "DescribeAction",
+    "expectedParameters": { "actionName": "CompleteTask" },
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "SCH-08 - AddJournalEntry with full content",
+    "category": "SchemaCompliance",
+    "userInput": "journal: finished the quarterly review",
+    "expectedAction": "AddJournalEntry",
+    "expectedParameters": { "content": "finished the quarterly review" },
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  }
+]

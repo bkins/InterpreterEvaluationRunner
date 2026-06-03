@@ -5,8 +5,7 @@
     "userInput": "Show me my stuff",
     "expectedAction": "None",
     "expectedParameters": {},
-    "shouldRequireClarification": false,
-    "shouldFail": true,
+    "expectsFailure": true,
     "expectedFailureType": "AmbiguousIntent"
   }
 ]

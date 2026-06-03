@@ -12,4 +12,5 @@ public enum FailureCategory
   , UnsupportedRequestFailure
    , ParameterMismatch
    , WrongFailureType
+   , MissingClarification
 }

@@ -1,0 +1,50 @@
+[
+  {
+    "name": "CLAR-01 - Vague journal request triggers clarification",
+    "category": "Clarification",
+    "userInput": "journal",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": true,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CLAR-02 - Bare task command triggers clarification",
+    "category": "Clarification",
+    "userInput": "task",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": true,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CLAR-03 - Complete with no index triggers clarification",
+    "category": "Clarification",
+    "userInput": "mark as done",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": true,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CLAR-04 - AddJournalEntry empty content triggers clarification",
+    "category": "Clarification",
+    "userInput": "journal entry:",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": true,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  }
+]

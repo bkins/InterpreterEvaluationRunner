@@ -1,11 +1,11 @@
 [
-  
-{
-  "name": "Pronoun reference",
-  "conversationHistory": [
-    "Add a task to buy milk"
-  ],
-  "userInput": "mark that complete",
-  "expectedAction": "CompleteTask"
-}
+  {
+    "name": "Pronoun reference (no context)",
+    "category": "AmbiguousIntent",
+    "userInput": "mark that complete",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "expectsFailure": true,
+    "expectedFailureType": "AmbiguousIntent"
+  }
 ]

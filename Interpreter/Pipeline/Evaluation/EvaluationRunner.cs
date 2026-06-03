@@ -6,6 +6,7 @@ using InterpreterEvaluationRunner.Interpreter.Pipeline.Models;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Normalization;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Repair.Engine;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Validation;
+using Microsoft.Extensions.Configuration;
 using Spectre.Console;
 
 namespace InterpreterEvaluationRunner.Interpreter.Pipeline.Evaluation;
@@ -72,6 +73,7 @@ public class EvaluationRunner : IEvaluationRunner
     private readonly ResultScorer          _resultScorer;
     private readonly ResultExporter        _resultExporter;
     private readonly IInterpreterPipeline  _pipeline;
+    private readonly IConfiguration        _configuration;
 
     public EvaluationRunner( IModelClient          modelClient
                            , PromptBuilder         promptBuilder
@@ -80,13 +82,15 @@ public class EvaluationRunner : IEvaluationRunner
                            , IContractValidator    validator
                            , ResultExporter        resultExporter
                            , IResponseRepairEngine responseRepairEngine
-                           , IInterpreterPipeline  pipeline )
+                           , IInterpreterPipeline  pipeline
+                           , IConfiguration        configuration )
     {
         _modelClient          = modelClient;
         _promptBuilder        = promptBuilder;
         _resultScorer         = resultScorer;
         _resultExporter       = resultExporter;
         _pipeline             = pipeline;
+        _configuration        = configuration;
     }
 
     public async Task RunAsync()
@@ -94,12 +98,10 @@ public class EvaluationRunner : IEvaluationRunner
         var overallStopwatch = Stopwatch.StartNew();
         var testCases        = await LoadTestCasesAsync();
 
-        var models = new[]
-                     {
-                             "qwen2.5:7b"
-                           , "mistral"
-                           , "llama3.1:8b"
-                     };
+        // Phase 1 benchmark models — ordered by recommendation: primary, secondary, conditional, GPU-only, disqualified
+        // Override via appsettings.json Evaluation:Models
+        var models = _configuration.GetSection("Evaluation:Models").Get<string[]>()
+                     ?? ["phi3:mini", "llama3.1:8b", "qwen2.5:7b", "qwen2.5:14b", "mistral"];
 
         var allResults = new List<EvaluationResult>();
 
@@ -162,13 +164,13 @@ public class EvaluationRunner : IEvaluationRunner
                        , testCase
                        , prompt.Length);
 
-        string rawResponse;
+        GenerationResult generationResult;
 
         try
         {
-            rawResponse = await GenerateResponseAsync(model
-                                                    , prompt
-                                                    , testCase);
+            generationResult = await GenerateResponseAsync(model
+                                                         , prompt
+                                                         , testCase);
         }
         catch (Exception ex)
         {
@@ -179,7 +181,7 @@ public class EvaluationRunner : IEvaluationRunner
                                  , ex);
         }
 
-        var pipelineResult         = await _pipeline.ProcessAsync(rawResponse);
+        var pipelineResult         = await _pipeline.ProcessAsync(generationResult.Text);
         var jsonParsedSuccessfully = pipelineResult.JsonParsedSuccessfully;
         var validationSucceeded    = pipelineResult.ValidationSucceeded;
         var response               = pipelineResult.Response;
@@ -192,7 +194,8 @@ public class EvaluationRunner : IEvaluationRunner
                                        , pipelineResult
                                        , stopwatch.ElapsedMilliseconds);
 
-        result.PromptVersion = _promptBuilder.Version;
+        result.PromptVersion   = _promptBuilder.Version;
+        result.TokensPerSecond = generationResult.TokensPerSecond;
 
         stopwatch.Stop();
 
@@ -206,9 +209,9 @@ public class EvaluationRunner : IEvaluationRunner
         return result;
     }
 
-    private async Task<string> GenerateResponseAsync( string             model
-                                                    , string             prompt
-                                                    , EvaluationTestCase testCase )
+    private async Task<GenerationResult> GenerateResponseAsync( string             model
+                                                               , string             prompt
+                                                               , EvaluationTestCase testCase )
     {
         return await SpinnerRunner.RunAsync($"Model: {model}"
                                           , async report =>
@@ -216,13 +219,17 @@ public class EvaluationRunner : IEvaluationRunner
                                                 report($"Test: {testCase.Name}");
 
                                                 var generationWatch = Stopwatch.StartNew();
-                                                var response        = await _modelClient.GenerateAsync(model, prompt);
+                                                var result          = await _modelClient.GenerateAsync(model, prompt);
 
                                                 generationWatch.Stop();
 
-                                                report($"Completed in {generationWatch.Elapsed:mm\\:ss}");
+                                                var toksLabel = result.TokensPerSecond.HasValue
+                                                                        ? $" @ {result.TokensPerSecond:F1} tok/s"
+                                                                        : "";
 
-                                                return response;
+                                                report($"Completed in {generationWatch.Elapsed:mm\\:ss}{toksLabel}");
+
+                                                return result;
                                             }
                                           , Color.Cyan
                                           , $"Generating with {model}");
@@ -342,10 +349,12 @@ public class EvaluationRunner : IEvaluationRunner
                                .BorderColor(Color.Grey);
 
         table.AddColumn("[bold cyan]MODEL[/]");
-        table.AddColumn("[bold green]AVG[/]");
-        table.AddColumn("[bold yellow]JSON[/]");
-        table.AddColumn("[bold yellow]INTENT[/]");
-        table.AddColumn("[bold yellow]PARAMS[/]");
+        table.AddColumn("[bold green]AVG SCORE[/]");
+        table.AddColumn("[bold blue]AVG MS[/]");
+        table.AddColumn("[bold blue]TOK/S[/]");
+        table.AddColumn("[bold yellow]JSON FAIL[/]");
+        table.AddColumn("[bold yellow]INTENT FAIL[/]");
+        table.AddColumn("[bold yellow]PARAM FAIL[/]");
         table.AddColumn("[bold yellow]FAILTYPE[/]");
         table.AddColumn("[bold red]TIMEOUTS[/]");
 
@@ -354,7 +363,15 @@ public class EvaluationRunner : IEvaluationRunner
         foreach (var modelGroup in grouped)
         {
             var modelResults = modelGroup.ToList();
-            var avgScore = modelResults.Average(result => result.Score);
+            var avgScore   = modelResults.Average(result => result.Score);
+            var avgLatency = modelResults.Average(result => result.LatencyMs);
+
+            var toksValues = modelResults
+                             .Where(r => r.TokensPerSecond.HasValue)
+                             .Select(r => r.TokensPerSecond!.Value)
+                             .ToList();
+
+            var avgToks = toksValues.Count > 0 ? (double?)toksValues.Average() : null;
 
             var jsonFailures = modelResults.Count(result => result.FailureCategories
                                                                   .Contains(FailureCategory.JsonParseFailure));
@@ -373,6 +390,8 @@ public class EvaluationRunner : IEvaluationRunner
 
             table.AddRow(Escape(modelGroup.Key)
                        , avgScore.ToString("F1")
+                       , $"{avgLatency:F0} ms"
+                       , avgToks.HasValue ? $"{avgToks:F1}" : "—"
                        , jsonFailures.ToString()
                        , intentFailures.ToString()
                        , parameterFailures.ToString()

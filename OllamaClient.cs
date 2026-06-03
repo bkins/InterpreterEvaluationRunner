@@ -12,9 +12,9 @@ public class OllamaClient : IModelClient
         _httpClient = httpClient;
     }
 
-    public async Task<string> GenerateAsync( string             model
-                                            , string            prompt
-                                            , CancellationToken cancellationToken = default)
+    public async Task<GenerationResult> GenerateAsync( string             model
+                                                      , string            prompt
+                                                      , CancellationToken cancellationToken = default)
     {
         var request = new
                       {
@@ -26,10 +26,9 @@ public class OllamaClient : IModelClient
                                         {
                                                 num_ctx        = 2048 // expand to: 4096 -> 8192 -> 16384
                                               , temperature    = 0
-                                              , num_predict    = 256
+                                              , num_predict    = 512
                                               , top_p          = 1
                                               , repeat_penalty = 1
-
                                         }
                       };
 
@@ -46,8 +45,24 @@ public class OllamaClient : IModelClient
 
         using var document = JsonDocument.Parse(json);
 
-        return document.RootElement
-                       .GetProperty("response")
-                       .GetString() ?? "";
+        var root = document.RootElement;
+
+        var text = root.GetProperty("response").GetString() ?? "";
+
+        double? tokensPerSecond = null;
+
+        if (root.TryGetProperty("eval_count",    out var evalCount) &&
+            root.TryGetProperty("eval_duration", out var evalDuration))
+        {
+            var tokens   = evalCount.GetInt64();
+            var durationNs = evalDuration.GetInt64();
+
+            if (durationNs > 0)
+            {
+                tokensPerSecond = tokens / (durationNs / 1_000_000_000.0);
+            }
+        }
+
+        return new GenerationResult(text, tokensPerSecond);
     }
 }

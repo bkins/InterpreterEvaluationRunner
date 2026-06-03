@@ -1,4 +1,5 @@
 
+using InterpreterEvaluationRunner.Interpreter.Pipeline.Models;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Normalization;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Repair.Engine;
 using InterpreterEvaluationRunner.Interpreter.Pipeline.Validation;
@@ -42,11 +43,14 @@ public class InterpreterPipeline : IInterpreterPipeline
                                         });
         }
 
+        var jsonParsedSuccessfully = normalizationResult?.FailureType != FailureTypes.ParsingError;
+
         return new PipelineResult
                {
                        RepairResult             = repairResult
-                     , ModelInterpreterResponse = normalizationResult
+                     , ModelInterpreterResponse = normalizationResult ?? new ModelInterpreterResponse()
                      , ValidationResult         = validationResult
+                     , JsonParsedSuccessfully   = jsonParsedSuccessfully
                };
     }
 }

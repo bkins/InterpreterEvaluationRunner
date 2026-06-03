@@ -1,0 +1,62 @@
+[
+  {
+    "name": "MPG-01 - AddTask missing shortDescription",
+    "category": "MissingParamGuard",
+    "userInput": "add a task",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": true,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "MPG-02 - AddJournalEntry missing content",
+    "category": "MissingParamGuard",
+    "userInput": "add a journal entry",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": true,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "MPG-03 - CompleteTask missing taskIndex",
+    "category": "MissingParamGuard",
+    "userInput": "complete a task",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": true,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "MPG-04 - DescribeAction missing actionName",
+    "category": "MissingParamGuard",
+    "userInput": "describe an action",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": true,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "MPG-05 - AddTask with preamble but no title",
+    "category": "MissingParamGuard",
+    "userInput": "I need to add a new task",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": true,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  }
+]

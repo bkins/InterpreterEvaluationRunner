@@ -1,7 +1,11 @@
 [
   {
     "name": "Two actions requested",
+    "category": "AmbiguousIntent",
     "userInput": "add a task and show my journal",
-    "expectedFailureType": "AmbiguousRequest"
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "expectsFailure": true,
+    "expectedFailureType": "AmbiguousIntent"
   }
 ]

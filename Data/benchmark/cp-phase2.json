@@ -1,0 +1,172 @@
+[
+  {
+    "name": "CP-AS-01: ListTasks — canonical phrasing",
+    "category": "CP-ActionSelection",
+    "userInput": "show my tasks",
+    "expectedAction": "ListTasks",
+    "expectedParameters": {},
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-AS-02: ListTasks — interrogative",
+    "category": "CP-ActionSelection",
+    "userInput": "what tasks do I have?",
+    "expectedAction": "ListTasks",
+    "expectedParameters": {},
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-AS-03: SearchJournalEntries — canonical",
+    "category": "CP-ActionSelection",
+    "userInput": "search journal for stress",
+    "expectedAction": "SearchJournalEntries",
+    "expectedParameters": {},
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": true
+  },
+  {
+    "name": "CP-AS-04: CompleteTask — canonical phrasing",
+    "category": "CP-ActionSelection",
+    "userInput": "mark task 3 as done",
+    "expectedAction": "CompleteTask",
+    "expectedParameters": {},
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": true
+  },
+  {
+    "name": "CP-AS-05: ChitChat — conversational",
+    "category": "CP-ActionSelection",
+    "userInput": "hey, how are you?",
+    "expectedAction": "ChitChat",
+    "expectedParameters": {},
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-AS-06: ListActions — meta-query",
+    "category": "CP-ActionSelection",
+    "userInput": "what actions are available?",
+    "expectedAction": "ListActions",
+    "expectedParameters": {},
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-PE-01: AddTask — extract shortDescription from natural language",
+    "category": "CP-ParameterExtraction",
+    "userInput": "add a task to call the dentist",
+    "expectedAction": "AddTask",
+    "expectedParameters": { "shortDescription": "call the dentist" },
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-PE-02: AddTask — colon-delimited format",
+    "category": "CP-ParameterExtraction",
+    "userInput": "add task: prepare quarterly report",
+    "expectedAction": "AddTask",
+    "expectedParameters": { "shortDescription": "prepare quarterly report" },
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-PE-03: AddTask — reminder phrasing",
+    "category": "CP-ParameterExtraction",
+    "userInput": "remind me to pick up the dry cleaning",
+    "expectedAction": "AddTask",
+    "expectedParameters": { "shortDescription": "pick up the dry cleaning" },
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-PE-04: AddJournalEntry — extract content after prefix",
+    "category": "CP-ParameterExtraction",
+    "userInput": "journal: finished the quarterly review",
+    "expectedAction": "AddJournalEntry",
+    "expectedParameters": { "content": "finished the quarterly review" },
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-PE-05: DescribeAction — extract actionName",
+    "category": "CP-ParameterExtraction",
+    "userInput": "describe the CompleteTask action",
+    "expectedAction": "DescribeAction",
+    "expectedParameters": { "actionName": "CompleteTask" },
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-MPG-01: AddTask — bare verb, no shortDescription",
+    "category": "CP-MissingParameterGuard",
+    "userInput": "add task",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-MPG-02: AddJournalEntry — no content supplied",
+    "category": "CP-MissingParameterGuard",
+    "userInput": "add a journal entry",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-AH-01: Ambiguous — pronoun without referent",
+    "category": "CP-AmbiguityHandling",
+    "userInput": "do that",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "expectsFailure": true,
+    "expectedFailureType": "AmbiguousIntent",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-AH-02: Ambiguous — bare list verb",
+    "category": "CP-AmbiguityHandling",
+    "userInput": "list",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "expectsFailure": true,
+    "expectedFailureType": "AmbiguousIntent",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-AH-03: Ambiguous — two distinct actions in one utterance",
+    "category": "CP-AmbiguityHandling",
+    "userInput": "add a task and show my tasks",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "expectsFailure": true,
+    "expectedFailureType": "AmbiguousIntent",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "CP-SC-01: Schema compliance — hallucination guard (action not in schema)",
+    "category": "CP-SchemaCompliance",
+    "userInput": "book me a flight to Paris",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "expectsFailure": true,
+    "expectedFailureType": "UnsupportedRequest",
+    "skipParameterCheck": false
+  }
+]

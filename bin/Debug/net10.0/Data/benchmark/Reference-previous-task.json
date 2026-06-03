@@ -1,10 +1,11 @@
 [
   {
-    "name": "Reference previous task",
-    "conversationHistory": [
-      "Add a task to buy groceries"
-    ],
+    "name": "Reference previous task (no context)",
+    "category": "AmbiguousIntent",
     "userInput": "mark that complete",
-    "expectedAction": "CompleteTask"
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "expectsFailure": true,
+    "expectedFailureType": "AmbiguousIntent"
   }
 ]

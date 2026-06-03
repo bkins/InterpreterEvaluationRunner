@@ -1,9 +1,11 @@
 [
   {
-  "name": "Missing task title",
-  "userInput": "add a task",
-  "expectedAction": "AddTask",
-  "expectedMissingParameters": [
-    "taskTitle"
-  ]
-}]
+    "name": "Missing task title",
+    "category": "MissingParameters",
+    "userInput": "add a task",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters"
+  }
+]

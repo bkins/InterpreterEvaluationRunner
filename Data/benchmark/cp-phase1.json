@@ -1,0 +1,98 @@
+[
+  {
+    "name": "T01 - AddTask (buy milk)",
+    "category": "Phase1-ActionSelection",
+    "userInput": "add task buy milk",
+    "expectedAction": "AddTask",
+    "expectedParameters": { "shortDescription": "buy milk" },
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "T02 - CompleteTask (task 2)",
+    "category": "Phase1-ActionSelection",
+    "userInput": "task 2 is done",
+    "expectedAction": "CompleteTask",
+    "expectedParameters": { "taskIndex": "2" },
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "T03 - BatchAddTasks",
+    "category": "Phase1-ActionSelection",
+    "userInput": "add tasks: buy milk, call dentist, finish report",
+    "expectedAction": "BatchAddTasks",
+    "expectedParameters": {},
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": true
+  },
+  {
+    "name": "T04 - Missing Parameter Guard (add a task)",
+    "category": "Phase1-MissingParamGuard",
+    "userInput": "add a task",
+    "expectedAction": "None",
+    "expectedParameters": {},
+    "shouldRequireClarification": true,
+    "shouldFail": true,
+    "expectsFailure": true,
+    "expectedFailureType": "MissingParameters",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "T05 - AddJournalEntry",
+    "category": "Phase1-ActionSelection",
+    "userInput": "journal: had a productive day at work",
+    "expectedAction": "AddJournalEntry",
+    "expectedParameters": { "content": "had a productive day at work" },
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "T06 - ListActions",
+    "category": "Phase1-ActionSelection",
+    "userInput": "what can you do?",
+    "expectedAction": "ListActions",
+    "expectedParameters": {},
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "T07 - ChitChat (hello)",
+    "category": "Phase1-ActionSelection",
+    "userInput": "hello there",
+    "expectedAction": "ChitChat",
+    "expectedParameters": {},
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  },
+  {
+    "name": "T08 - DescribeAction",
+    "category": "Phase1-ActionSelection",
+    "userInput": "describe the AddTask action",
+    "expectedAction": "DescribeAction",
+    "expectedParameters": { "actionName": "AddTask" },
+    "shouldRequireClarification": false,
+    "shouldFail": false,
+    "expectsFailure": false,
+    "expectedFailureType": "None",
+    "skipParameterCheck": false
+  }
+]

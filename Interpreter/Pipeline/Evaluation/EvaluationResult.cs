@@ -23,4 +23,5 @@ public class EvaluationResult
     public bool                  JsonExtractionWasRequired { get; set; }
     public string?               StackTrace                { get; set; }
     public List<FailureCategory> FailureCategories         { get; set; } = [];
+    public double?               TokensPerSecond           { get; set; }
 }

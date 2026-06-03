@@ -66,6 +66,11 @@ public class ResultScorer
                              , result);
         }
 
+        if (testCase.ShouldRequireClarification)
+        {
+            EvaluateClarification(response, result);
+        }
+
         ApplyRepairPenalty(pipelineResult
                          , result);
 
@@ -144,6 +149,14 @@ public class ResultScorer
                                    , ModelInterpreterResponse response
                                    , EvaluationResult         result )
     {
+        if (testCase.SkipParameterCheck)
+        {
+            result.ParametersWereCorrect =  true;
+            result.Score                 += FailureScoring.Parameters;
+
+            return;
+        }
+
         var parametersCorrect = CompareParameters(testCase.ExpectedParameters
                                                 , response.Parameters);
 
@@ -157,6 +170,20 @@ public class ResultScorer
 
         result.Failures.Add("Parameter mismatch.");
         result.FailureCategories.Add(FailureCategory.ParameterMismatch);
+    }
+
+    private void EvaluateClarification( ModelInterpreterResponse response
+                                      , EvaluationResult         result )
+    {
+        var hasClarifyingQuestion = !string.IsNullOrWhiteSpace(response.ClarifyingQuestion);
+
+        result.ClarificationWasCorrect = hasClarifyingQuestion;
+
+        if (!hasClarifyingQuestion)
+        {
+            result.Failures.Add("Expected clarifying question but none was provided.");
+            result.FailureCategories.Add(FailureCategory.MissingClarification);
+        }
     }
 
     private void ApplyRepairPenalty( PipelineResult   pipelineResult

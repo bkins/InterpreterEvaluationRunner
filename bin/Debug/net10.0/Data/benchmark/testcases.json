@@ -1,32 +1,31 @@
 [
   {
     "name": "Simple Add Task",
+    "category": "ExactIntent",
     "userInput": "Add a task to buy groceries",
     "expectedAction": "AddTask",
-    "expectedParameters":
-    {
+    "expectedParameters": {
       "description": "buy groceries"
     },
-    "shouldRequireClarification": false,
-    "shouldFail": false,
+    "expectsFailure": false,
     "expectedFailureType": "None"
   },
   {
     "name": "Missing Required Parameter",
+    "category": "MissingParameters",
     "userInput": "Create a journal entry",
-    "expectedAction": "AddJournalEntry",
+    "expectedAction": "None",
     "expectedParameters": {},
-    "shouldRequireClarification": true,
-    "shouldFail": false,
+    "expectsFailure": true,
     "expectedFailureType": "MissingParameters"
   },
   {
     "name": "Ambiguous Intent",
+    "category": "AmbiguousIntent",
     "userInput": "Show me my stuff",
     "expectedAction": "None",
     "expectedParameters": {},
-    "shouldRequireClarification": false,
-    "shouldFail": true,
+    "expectsFailure": true,
     "expectedFailureType": "AmbiguousIntent"
   }
 ]

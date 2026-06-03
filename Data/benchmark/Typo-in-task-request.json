@@ -1,7 +1,13 @@
 [
   {
     "name": "Typo in task request",
+    "category": "ExactIntent",
     "userInput": "ad a tsk to by milk",
-    "expectedAction": "AddTask"
+    "expectedAction": "AddTask",
+    "expectedParameters": {
+      "description": "buy milk"
+    },
+    "expectsFailure": false,
+    "expectedFailureType": "None"
   }
 ]

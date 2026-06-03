@@ -11,4 +11,5 @@ public class EvaluationTestCase
     public bool                       ExpectsFailure             { get; set; }
     public string                     ExpectedFailureType        { get; set; } = "None";
     public string                     Category                   { get; set; } = "";
+    public bool                       SkipParameterCheck         { get; set; }
 }
