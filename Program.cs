@@ -38,6 +38,7 @@ builder.Services.AddSingleton<IInterpreterPipeline, InterpreterPipeline>();
 //Rules
 builder.Services.AddSingleton<IRepairRule, MarkdownFenceRemovalRule>();
 builder.Services.AddSingleton<IRepairRule, ToolCallNoiseRemovalRule>();
+builder.Services.AddSingleton<IRepairRule, LeadingZeroDecimalRepairRule>();
 builder.Services.AddSingleton<IRepairRule, ExtractFirstJsonObjectRule>();
 
 var host   = builder.Build();
