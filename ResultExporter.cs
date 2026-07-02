@@ -16,7 +16,8 @@ public class ResultExporter
         _configuration = configuration;
     }
 
-    public async Task ExportAsync(List<EvaluationResult> results)
+    public async Task ExportAsync( List<EvaluationResult> results
+                                 , string                 totalTimeToComplete )
     {
         Directory.CreateDirectory("Output");
 
@@ -38,32 +39,35 @@ public class ResultExporter
         {
             Directory.CreateDirectory(reportDir);
 
-            var reportPath = Path.Combine(reportDir, $"eval-{DateTime.UtcNow:yyyy-MM-dd}.txt");
+            var reportPath = Path.Combine(reportDir, $"eval-{DateTime.UtcNow:yyyy-MM-dd HH-mm-ss}.txt");
 
             // Open with FileShare.ReadWrite so Tee-Object's read handle on the same
             // file does not cause an IOException.
-            await using var fs = new FileStream(reportPath
-                                              , FileMode.Create
-                                              , FileAccess.Write
-                                              , FileShare.ReadWrite);
-            await using var sw = new StreamWriter(fs, Encoding.UTF8);
-            await sw.WriteAsync(BuildTextReport(results));
+            await using var fileStream = new FileStream(reportPath
+                                                      , FileMode.Create
+                                                      , FileAccess.Write
+                                                      , FileShare.ReadWrite);
+            
+            await using var streamWriter = new StreamWriter(fileStream, Encoding.UTF8);
+            
+            await streamWriter.WriteAsync(BuildTextReport(results, totalTimeToComplete));
 
             AnsiConsole.MarkupLine($"Text report saved to {reportPath}");
         }
     }
 
-    private static string BuildTextReport(List<EvaluationResult> results)
+    private static string BuildTextReport( List<EvaluationResult> results
+                                         , string                 totalTimeToComplete )
     {
         var sb = new StringBuilder();
         var now = DateTime.UtcNow;
 
         sb.AppendLine("INTERPRETER EVALUATION RUNNER — RESULTS");
-        sb.AppendLine($"Generated : {now:yyyy-MM-dd HH:mm:ss} UTC");
+        sb.AppendLine($"Date : {now:yyyy-MM-dd HH:mm:ss} UTC");
         sb.AppendLine(new string('=', 80));
         sb.AppendLine();
 
-        var grouped = results.GroupBy(r => r.ModelName).ToList();
+        var grouped = results.GroupBy(result => result.ModelName).ToList();
 
         sb.AppendLine("MODEL SUMMARY");
         sb.AppendLine(new string('-', 80));
@@ -77,19 +81,23 @@ public class ResultExporter
         foreach (var group in grouped)
         {
             var list        = group.ToList();
-            var avgScore    = list.Average(r => r.Score);
-            var avgToks     = list.Where(r => r.TokensPerSecond.HasValue).Select(r => r.TokensPerSecond!.Value).ToList();
-            var toksDisplay = avgToks.Count > 0 ? avgToks.Average().ToString("F1") : "—";
+            var avgScore    = list.Average(result => result.Score);
+            var avgToks     = list.Where(result => result.TokensPerSecond.HasValue)
+                                  .Select(result => result.TokensPerSecond!.Value)
+                                  .ToList();
+            var toksDisplay = avgToks.Count > 0 
+                                      ? avgToks.Average().ToString("F1") 
+                                      : "—";
 
             sb.AppendLine(string.Format(headerFmt
                                       , group.Key
                                       , avgScore.ToString("F1")
                                       , list.Count
-                                      , list.Count(r => r.FailureCategories.Contains(FailureCategory.JsonParseFailure))
-                                      , list.Count(r => r.FailureCategories.Contains(FailureCategory.WrongIntent))
-                                      , list.Count(r => r.FailureCategories.Contains(FailureCategory.ParameterMismatch))
-                                      , list.Count(r => r.FailureCategories.Contains(FailureCategory.WrongFailureType))
-                                      , list.Count(r => r.FailureCategories.Contains(FailureCategory.Timeout))
+                                      , list.Count(result => result.FailureCategories.Contains(FailureCategory.JsonParseFailure))
+                                      , list.Count(result => result.FailureCategories.Contains(FailureCategory.WrongIntent))
+                                      , list.Count(result => result.FailureCategories.Contains(FailureCategory.ParameterMismatch))
+                                      , list.Count(result => result.FailureCategories.Contains(FailureCategory.WrongFailureType))
+                                      , list.Count(result => result.FailureCategories.Contains(FailureCategory.Timeout))
                                       , toksDisplay));
         }
 
@@ -106,24 +114,27 @@ public class ResultExporter
             sb.AppendLine(string.Format(rowFmt, "Test", "Score", "Parsed", "Action", "Params"));
             sb.AppendLine("  " + new string('-', 72));
 
-            foreach (var r in group)
+            foreach (var result in group)
             {
                 sb.AppendLine(string.Format(rowFmt
-                                          , r.TestName.Length > 40 ? r.TestName[..40] : r.TestName
-                                          , r.Score
-                                          , r.JsonParsedSuccessfully ? "yes" : "no"
-                                          , r.ActionWasCorrect       ? "correct" : "wrong"
-                                          , r.ParametersWereCorrect  ? "correct" : "wrong"));
+                                          , result.TestName.Length > 40 
+                                                    ? result.TestName[..40] 
+                                                    : result.TestName
+                                          , result.Score
+                                          , result.JsonParsedSuccessfully ? "yes" : "no"
+                                          , result.ActionWasCorrect       ? "correct" : "wrong"
+                                          , result.ParametersWereCorrect  ? "correct" : "wrong"));
 
-                if (r.Failures.Count > 0)
-                {
-                    foreach (var f in r.Failures)
-                        sb.AppendLine($"      ! {f}");
-                }
+                if (result.Failures.Count <= 0) continue;
+                
+                foreach (var failure in result.Failures)
+                    sb.AppendLine($"      ! {failure}");
             }
 
             sb.AppendLine();
         }
+        
+        sb.AppendLine($"Total time to complete: {totalTimeToComplete}");
 
         return sb.ToString();
     }

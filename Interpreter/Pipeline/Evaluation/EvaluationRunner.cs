@@ -93,11 +93,16 @@ public class EvaluationRunner : IEvaluationRunner
         _configuration        = configuration;
     }
 
-    public async Task RunAsync()
+    public async Task RunAsync(int maxTestCase = -1)
     {
         var overallStopwatch = Stopwatch.StartNew();
         var testCases        = await LoadTestCasesAsync();
 
+        if (maxTestCase > 0)
+        {
+            testCases = testCases.Take(maxTestCase).ToList();
+        }
+        
         // Phase 1 benchmark models — ordered by recommendation: primary, secondary, conditional, GPU-only, disqualified
         // Override via appsettings.json Evaluation:Models
         var models = _configuration.GetSection("Evaluation:Models").Get<string[]>()
@@ -143,11 +148,12 @@ public class EvaluationRunner : IEvaluationRunner
 
         PrintSummary(allResults);
 
-        await _resultExporter.ExportAsync(allResults);
-
         overallStopwatch.Stop();
 
-        var finalPanelTitle = $"[bold green]All tests completed in {overallStopwatch.Elapsed:hh\\:mm\\:ss}[/]";
+        var totalTimeToComplete = $"{overallStopwatch.Elapsed:hh\\:mm\\:ss}";
+        await _resultExporter.ExportAsync(allResults, totalTimeToComplete);
+
+        var finalPanelTitle = $"[bold green]All tests completed in {totalTimeToComplete}[/]";
         var finalPanel      = new Panel(finalPanelTitle).Border(BoxBorder.Double)
                                                         .BorderColor(Color.Green);;
 
@@ -249,7 +255,8 @@ public class EvaluationRunner : IEvaluationRunner
         grid.AddRow("[grey]Prompt Length[/]", $"[green]{promptLength}[/]");
         grid.AddRow("[grey]Input[/]", Escape(testCase.UserInput));
 
-        var panel = new Panel(grid).Header("[bold white]TEST CASE[/]")
+        var panel = new Panel(grid).Header("[bold white]"
+                                         + "TEST CASE[/]")
                                    .Border(BoxBorder.Rounded)
                                    .BorderColor(Color.Blue);
 
@@ -325,12 +332,11 @@ public class EvaluationRunner : IEvaluationRunner
                        {failures}
                        """;
 
-        var panel =
-                new Panel(new Markup(summary)).Header("[bold white]RESULT SUMMARY[/]")
-                                              .Border(BoxBorder.Rounded)
-                                              .BorderColor(result.Score > 0
-                                                                   ? Color.Green
-                                                                   : Color.Red);
+        var panel = new Panel(new Markup(summary)).Header("[bold white]RESULT SUMMARY[/]")
+                                                  .Border(BoxBorder.Rounded)
+                                                  .BorderColor(result.Score > 0
+                                                                       ? Color.Green
+                                                                       : Color.Red);
 
         AnsiConsole.Write(panel);
 
@@ -348,28 +354,27 @@ public class EvaluationRunner : IEvaluationRunner
         var table = new Table().Border(TableBorder.Rounded)
                                .BorderColor(Color.Grey);
 
-        table.AddColumn("[bold cyan]MODEL[/]");
-        table.AddColumn("[bold green]AVG SCORE[/]");
-        table.AddColumn("[bold blue]AVG MS[/]");
-        table.AddColumn("[bold blue]TOK/S[/]");
-        table.AddColumn("[bold yellow]JSON FAIL[/]");
-        table.AddColumn("[bold yellow]INTENT FAIL[/]");
-        table.AddColumn("[bold yellow]PARAM FAIL[/]");
-        table.AddColumn("[bold yellow]FAILTYPE[/]");
-        table.AddColumn("[bold red]TIMEOUTS[/]");
+        table.AddColumn(new TableColumn("[bold cyan]MODEL[/]").NoWrap());
+        table.AddColumn(new TableColumn("[bold green]SCORE[/]").Centered());
+        table.AddColumn(new TableColumn("[bold blue]AVG (ms)[/]").Centered());
+        table.AddColumn(new TableColumn("[bold blue]TOK/S[/]").Centered());
+        table.AddColumn(new TableColumn("[bold yellow]JSON[/]").Centered());
+        table.AddColumn(new TableColumn("[bold yellow]INTENT[/]").Centered());
+        table.AddColumn(new TableColumn("[bold yellow]PARAM[/]").Centered());
+        table.AddColumn(new TableColumn("[bold yellow]FAIL[/]").Centered());
+        table.AddColumn(new TableColumn("[bold red]TIMEOUTS[/]").Centered());
 
         var grouped = results.GroupBy(result => result.ModelName);
 
         foreach (var modelGroup in grouped)
         {
             var modelResults = modelGroup.ToList();
-            var avgScore   = modelResults.Average(result => result.Score);
-            var avgLatency = modelResults.Average(result => result.LatencyMs);
+            var avgScore     = modelResults.Average(result => result.Score);
+            var avgLatency   = modelResults.Average(result => result.LatencyMs);
 
-            var toksValues = modelResults
-                             .Where(r => r.TokensPerSecond.HasValue)
-                             .Select(r => r.TokensPerSecond!.Value)
-                             .ToList();
+            var toksValues = modelResults.Where(result => result.TokensPerSecond.HasValue)
+                                         .Select(result => result.TokensPerSecond!.Value)
+                                         .ToList();
 
             var avgToks = toksValues.Count > 0 ? (double?)toksValues.Average() : null;
 
@@ -390,15 +395,17 @@ public class EvaluationRunner : IEvaluationRunner
 
             table.AddRow(Escape(modelGroup.Key)
                        , avgScore.ToString("F1")
-                       , $"{avgLatency:F0} ms"
-                       , avgToks.HasValue ? $"{avgToks:F1}" : "—"
+                       , avgLatency.ToString("F0")
+                       , avgToks.HasValue 
+                                   ? $"{avgToks:F1}" 
+                                   : "—"
                        , jsonFailures.ToString()
                        , intentFailures.ToString()
                        , parameterFailures.ToString()
                        , failureTypeFailures.ToString()
                        , timeouts.ToString());
         }
-
+        
         AnsiConsole.Write(table);
     }
 

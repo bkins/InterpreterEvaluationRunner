@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using CP.Client.Core.Avails;
 
 namespace InterpreterEvaluationRunner.Interpreter.Pipeline.Repair.Rules;
 
@@ -14,7 +15,7 @@ public class MarkdownFenceRemovalRule : IRepairRule
     public string Apply(string input)
     {
         var cleaned = Regex.Replace(input
-                                  , @"```(?:json)?\s*|\s*```"
+                                  , RegexMatchingPatterns.MarkdownCodeBlockFencePattern
                                   , ""
                                   , RegexOptions.IgnoreCase);
 

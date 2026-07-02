@@ -44,4 +44,9 @@ builder.Services.AddSingleton<IRepairRule, ExtractFirstJsonObjectRule>();
 var host   = builder.Build();
 var runner = host.Services.GetRequiredService<IEvaluationRunner>();
 
-await runner.RunAsync();
+#if DEBUG
+    await runner.RunAsync(1);
+#else
+    await runner.RunAsync();
+#endif
+

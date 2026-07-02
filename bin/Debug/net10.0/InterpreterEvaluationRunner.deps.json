@@ -8,6 +8,7 @@
     ".NETCoreApp,Version=v10.0": {
       "InterpreterEvaluationRunner/1.0.0": {
         "dependencies": {
+          "CP.Client.Core": "0.1.59",
           "ConsoleUtilities": "1.0.0",
           "FluentValidation": "12.1.1",
           "Microsoft.Extensions.Configuration.Json": "10.0.8",
@@ -19,6 +20,14 @@
         },
         "runtime": {
           "InterpreterEvaluationRunner.dll": {}
+        }
+      },
+      "CP.Shared.Primitives/0.1.52": {
+        "runtime": {
+          "lib/netstandard2.1/CP.Shared.Primitives.dll": {
+            "assemblyVersion": "0.1.52.0",
+            "fileVersion": "0.1.52.0"
+          }
         }
       },
       "FluentValidation/12.1.1": {
@@ -475,6 +484,17 @@
             "fileVersion": "1.0.0.0"
           }
         }
+      },
+      "CP.Client.Core/0.1.59": {
+        "dependencies": {
+          "CP.Shared.Primitives": "0.1.52"
+        },
+        "runtime": {
+          "CP.Client.Core.dll": {
+            "assemblyVersion": "0.1.59.0",
+            "fileVersion": "0.1.59.0"
+          }
+        }
       }
     }
   },
@@ -483,6 +503,13 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "CP.Shared.Primitives/0.1.52": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PZ+WGarFxyRxcH3NC+fWCOpm37toeyiVMtfFFwtfWSsFdIXziAJY9fLaMlTPx9IxflbqnS/7v1Nd0Z04BgJkJQ==",
+      "path": "cp.shared.primitives/0.1.52",
+      "hashPath": "cp.shared.primitives.0.1.52.nupkg.sha512"
     },
     "FluentValidation/12.1.1": {
       "type": "package",
@@ -723,6 +750,11 @@
       "hashPath": "system.diagnostics.eventlog.10.0.8.nupkg.sha512"
     },
     "ConsoleUtilities/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "CP.Client.Core/0.1.59": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ConsoleUtilities\ConsoleUtilities\ConsoleUtilities.csproj" />
+    <ProjectReference Include="..\CP.Client.Core\CP.Client.Core\CP.Client.Core.csproj" />
   </ItemGroup>
 
 </Project>

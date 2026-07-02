@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using CP.Client.Core.Avails;
 
 namespace InterpreterEvaluationRunner.Interpreter.Pipeline.Repair.Rules;
 
@@ -6,7 +7,8 @@ namespace InterpreterEvaluationRunner.Interpreter.Pipeline.Repair.Rules;
 // Replace any run of 2+ leading zeros before a decimal point with a single zero.
 public class LeadingZeroDecimalRepairRule : IRepairRule
 {
-    private static readonly Regex Pattern = new(@"(?<!\d)0{2,}\.", RegexOptions.Compiled);
+    private static readonly Regex Pattern = new(RegexMatchingPatterns.MultiLeadingZeroDecimalPattern
+                                              , RegexOptions.Compiled);
 
     public string Name => nameof(LeadingZeroDecimalRepairRule);
 
